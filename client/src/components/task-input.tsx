@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { InsertTask } from "@shared/schema";
@@ -6,10 +6,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select"; 
 import { Card, CardContent } from "@/components/ui/card";
+import DatePicker from "react-datepicker"; 
+import "react-datepicker/dist/react-datepicker.css"; 
 
-export default function TaskInput() {
+const categories = ["Work", "Personal", "Shopping", "Other"];
+
+export default function TaskInput({ tasks }) {
   const [text, setText] = useState("");
+  const [category, setCategory] = useState(categories[0]);
+  const [dueDate, setDueDate] = useState<Date | null>(null); 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -21,6 +30,8 @@ export default function TaskInput() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setText("");
+      setCategory(categories[0]);
+      setDueDate(null); 
       toast({
         title: "Task created!",
         description: "Your new task has been added successfully.",
@@ -43,6 +54,8 @@ export default function TaskInput() {
     createTaskMutation.mutate({
       text: trimmedText,
       completed: false,
+      category: category,
+      dueDate: dueDate ? dueDate.toISOString() : null, 
     });
   };
 
@@ -52,6 +65,12 @@ export default function TaskInput() {
       handleSubmit(e);
     }
   };
+
+  const filteredTasks = tasks.filter(task => {
+    const matchesText = task.text.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === "all" || (filterStatus === "completed" && task.completed) || (filterStatus === "pending" && !task.completed);
+    return matchesText && matchesStatus;
+  });
 
   return (
     <Card className="mb-8">
@@ -78,6 +97,39 @@ export default function TaskInput() {
               </div>
             </div>
           </div>
+          <div>
+            <label htmlFor="categorySelect" className="sr-only">
+              Select category
+            </label>
+            <Select
+              id="categorySelect"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="py-3"
+              disabled={createTaskMutation.isPending}
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="dueDate" className="sr-only">
+              Select due date
+            </label>
+            <DatePicker
+              id="dueDate"
+              selected={dueDate}
+              onChange={(date) => setDueDate(date)}
+              className="py-3 border rounded-md w-full"
+              placeholderText="Select due date"
+              dateFormat="MMMM d, yyyy"
+              isClearable
+              disabled={createTaskMutation.isPending}
+            />
+          </div>
           <Button
             type="submit"
             className="w-full py-3"
@@ -87,6 +139,31 @@ export default function TaskInput() {
             {createTaskMutation.isPending ? "Adding..." : "Add Task"}
           </Button>
         </form>
+
+        <div className="mt-4">
+          <Input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
+          />
+          <div className="flex space-x-2 mb-4">
+            <Button onClick={() => setFilterStatus("all")} variant={filterStatus === "all" ? "outline" : "default"}>All</Button>
+            <Button onClick={() => setFilterStatus("completed")} variant={filterStatus === "completed" ? "outline" : "default"}>Completed</Button>
+            <Button onClick={() => setFilterStatus("pending")} variant={filterStatus === "pending" ? "outline" : "default"}>Pending</Button>
+          </div>
+          <div>
+            {filteredTasks.map(task => (
+              <div key={task.id} className="flex items-center justify-between p-2 border-b">
+                <span className={`flex-1 ${task.completed ? "line-through" : ""}`}>  
+                  {task.text.replace(new RegExp(`(${searchTerm})`, 'gi'), (match) => `<span class="bg-yellow-200">${match}</span>`)}
+                </span>
+                <Button onClick={() => {/* handle complete task */}}>{task.completed ? "Undo" : "Complete"}</Button>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {createTaskMutation.isPending && (
           <div className="flex items-center justify-center py-4 mt-4">
