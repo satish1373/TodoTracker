@@ -6,17 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select"; 
 import { Card, CardContent } from "@/components/ui/card";
-import DatePicker from "react-datepicker"; // Importing DatePicker
-import "react-datepicker/dist/react-datepicker.css"; // Importing DatePicker styles
-
-const categories = ["Work", "Personal", "Shopping", "Other"];
 
 export default function TaskInput() {
   const [text, setText] = useState("");
-  const [category, setCategory] = useState(categories[0]);
-  const [dueDate, setDueDate] = useState<Date | null>(null); // State for due date
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -28,8 +21,6 @@ export default function TaskInput() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setText("");
-      setCategory(categories[0]);
-      setDueDate(null); // Reset due date on success
       toast({
         title: "Task created!",
         description: "Your new task has been added successfully.",
@@ -52,8 +43,6 @@ export default function TaskInput() {
     createTaskMutation.mutate({
       text: trimmedText,
       completed: false,
-      category: category,
-      dueDate: dueDate ? dueDate.toISOString() : null, // Include due date in the task
     });
   };
 
@@ -88,39 +77,6 @@ export default function TaskInput() {
                 <Plus className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
-          </div>
-          <div>
-            <label htmlFor="categorySelect" className="sr-only">
-              Select category
-            </label>
-            <Select
-              id="categorySelect"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="py-3"
-              disabled={createTaskMutation.isPending}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <label htmlFor="dueDate" className="sr-only">
-              Select due date
-            </label>
-            <DatePicker
-              id="dueDate"
-              selected={dueDate}
-              onChange={(date) => setDueDate(date)}
-              className="py-3 border rounded-md w-full"
-              placeholderText="Select due date"
-              dateFormat="MMMM d, yyyy"
-              isClearable
-              disabled={createTaskMutation.isPending}
-            />
           </div>
           <Button
             type="submit"
