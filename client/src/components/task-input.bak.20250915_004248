@@ -6,17 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select"; 
 import { Card, CardContent } from "@/components/ui/card";
-import DatePicker from "react-datepicker"; 
-import "react-datepicker/dist/react-datepicker.css"; 
-
-const categories = ["Work", "Personal", "Shopping", "Other"];
 
 export default function TaskInput() {
   const [text, setText] = useState("");
-  const [category, setCategory] = useState(categories[0]);
-  const [dueDate, setDueDate] = useState<Date | null>(null); 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -28,8 +21,6 @@ export default function TaskInput() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setText("");
-      setCategory(categories[0]);
-      setDueDate(null); 
       toast({
         title: "Task created!",
         description: "Your new task has been added successfully.",
@@ -52,8 +43,6 @@ export default function TaskInput() {
     createTaskMutation.mutate({
       text: trimmedText,
       completed: false,
-      category: category,
-      dueDate: dueDate ? dueDate.toISOString() : null, 
     });
   };
 
@@ -89,39 +78,6 @@ export default function TaskInput() {
               </div>
             </div>
           </div>
-          <div>
-            <label htmlFor="categorySelect" className="sr-only">
-              Select category
-            </label>
-            <Select
-              id="categorySelect"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="py-3"
-              disabled={createTaskMutation.isPending}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <label htmlFor="dueDate" className="sr-only">
-              Select due date
-            </label>
-            <DatePicker
-              id="dueDate"
-              selected={dueDate}
-              onChange={(date) => setDueDate(date)}
-              className="py-3 border rounded-md w-full"
-              placeholderText="Select due date"
-              dateFormat="MMMM d, yyyy"
-              isClearable
-              disabled={createTaskMutation.isPending}
-            />
-          </div>
           <Button
             type="submit"
             className="w-full py-3"
@@ -140,46 +96,5 @@ export default function TaskInput() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-// Updated TaskItem component for completion animation
-import { useState } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
-
-interface TaskItemProps {
-  task: { id: string; text: string; completed: boolean };
-  onComplete: (id: string) => void;
-}
-
-export function TaskItem({ task, onComplete }: TaskItemProps) {
-  const [isCompleted, setIsCompleted] = useState(task.completed);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const handleComplete = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      onComplete(task.id);
-      setIsCompleted(true);
-      setIsAnimating(false);
-    }, 300); // Duration of the animation
-  };
-
-  return (
-    <div className={`flex items-center justify-between p-4 border-b ${isCompleted ? "opacity-50" : ""}`}> 
-      <span className={`flex-1 ${isCompleted ? "line-through" : ""}`}>{task.text}</span>
-      <button onClick={handleComplete} className={`transition-transform duration-300 ${isAnimating ? "scale-110" : ""}`}> 
-        {isCompleted ? (
-          <CheckCircle className="text-green-500" />
-        ) : (
-          <XCircle className="text-red-500" />
-        )}
-      </button>
-      {isAnimating && (
-        <div className="absolute transition-opacity duration-300 opacity-100">
-          <CheckCircle className="text-green-500 animate-bounce" />
-        </div>
-      )}
-    </div>
   );
 }
