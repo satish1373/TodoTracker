@@ -6,14 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select"; // Assuming you have a Select component
 import { Card, CardContent } from "@/components/ui/card";
-
-const categories = ["Work", "Personal", "Shopping", "Other"];
 
 export default function TaskInput() {
   const [text, setText] = useState("");
-  const [category, setCategory] = useState(categories[0]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -25,7 +21,6 @@ export default function TaskInput() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setText("");
-      setCategory(categories[0]);
       toast({
         title: "Task created!",
         description: "Your new task has been added successfully.",
@@ -48,7 +43,6 @@ export default function TaskInput() {
     createTaskMutation.mutate({
       text: trimmedText,
       completed: false,
-      category: category, // Include category in the task
     });
   };
 
@@ -83,24 +77,6 @@ export default function TaskInput() {
                 <Plus className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
-          </div>
-          <div>
-            <label htmlFor="categorySelect" className="sr-only">
-              Select category
-            </label>
-            <Select
-              id="categorySelect"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="py-3"
-              disabled={createTaskMutation.isPending}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </Select>
           </div>
           <Button
             type="submit"
